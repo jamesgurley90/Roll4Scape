@@ -1,25 +1,25 @@
 package com.pkbob.roll4scape;
 
-public class BossingTask
+public class RollTask
 {
-    private final String bossName;
+    private final String name;
     private final String action;
     private final boolean membersOnly;
     private final int minQuantity;
     private final int maxQuantity;
 
-    public BossingTask(String bossName, String action, boolean membersOnly, int minQuantity, int maxQuantity)
+    public RollTask(String name, String action, boolean membersOnly, int minQuantity, int maxQuantity)
     {
-        this.bossName = bossName;
+        this.name = name;
         this.action = action;
         this.membersOnly = membersOnly;
         this.minQuantity = minQuantity;
         this.maxQuantity = maxQuantity;
     }
 
-    public String getBossName()
+    public String getName()
     {
-        return bossName;
+        return name;
     }
 
     public String getAction()
