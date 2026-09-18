@@ -17,15 +17,19 @@ import net.runelite.client.ui.PluginPanel;
 public class Roll4ScapePanel extends PluginPanel
 {
     private final Client client;
+    private final Roll4ScapeProgress progress;
     private final RollEngine rollEngine = new RollEngine();
+    private int activeRoll = 0;
+    private String activeCategory = null;
+    private final JButton completeButton = new JButton("Complete Task");
 
     private final JLabel rollResult =
             new JLabel("Choose a category to roll!", SwingConstants.CENTER);
 
-    public Roll4ScapePanel(Client client)
+    public Roll4ScapePanel(Client client, Roll4ScapeProgress progress)
     {
         this.client = client;
-
+        this.progress = progress;
         setLayout(new BorderLayout());
 
         JLabel title = new JLabel(
@@ -51,25 +55,30 @@ public class Roll4ScapePanel extends PluginPanel
 
         skillingButton.addActionListener(e -> rollGeneric(
                 rollEngine.getSkillingPool(),
-                false
+                false,
+                "SKILLING"
         ));
 
         makingButton.addActionListener(e -> rollGeneric(
                 rollEngine.getMakingPool(),
-                false
+                false,
+                "MAKING"
         ));
 
         combatButton.addActionListener(e -> rollCombat());
 
         adventureButton.addActionListener(e -> rollGeneric(
                 rollEngine.getAdventurePool(),
-                false
+                false,
+                "ADVENTURE"
         ));
 
         wildButton.addActionListener(e -> rollGeneric(
                 rollEngine.getWildPool(),
-                true
+                true,
+                "WILD"
         ));
+        completeButton.addActionListener(e -> completeActiveTask());
 
         categoryPanel.add(bossingButton);
         categoryPanel.add(skillingButton);
@@ -77,6 +86,7 @@ public class Roll4ScapePanel extends PluginPanel
         categoryPanel.add(combatButton);
         categoryPanel.add(adventureButton);
         categoryPanel.add(wildButton);
+        categoryPanel.add(completeButton);
 
         add(categoryPanel, BorderLayout.CENTER);
         add(rollResult, BorderLayout.SOUTH);
@@ -122,7 +132,8 @@ public class Roll4ScapePanel extends PluginPanel
         }
 
         int roll = rollEngine.rollD20();
-
+        activeRoll = roll;
+        activeCategory = "BOSSING";
         BossingTask task = rollEngine.generateBossingTask(
                 roll,
                 isMembersWorld()
@@ -165,7 +176,8 @@ public class Roll4ScapePanel extends PluginPanel
         }
 
         int roll = rollEngine.rollD20();
-
+        activeRoll = roll;
+        activeCategory = "COMBAT";
         CombatTask task = rollEngine.generateCombatTask(
                 client,
                 roll,
@@ -211,7 +223,8 @@ public class Roll4ScapePanel extends PluginPanel
      */
     private void rollGeneric(
             List<RollTask> pool,
-            boolean wild)
+            boolean wild,
+            String category)
     {
         if (!canRoll())
         {
@@ -219,6 +232,9 @@ public class Roll4ScapePanel extends PluginPanel
         }
 
         int roll = rollEngine.rollD20();
+
+        activeRoll = roll;
+        activeCategory = category;
 
         RollTask task = rollEngine.generateTask(
                 pool,
@@ -316,5 +332,32 @@ public class Roll4ScapePanel extends PluginPanel
                         "<b>No eligible task found for this account.</b>" +
                         "</center></html>"
         );
+    }
+    private void completeActiveTask()
+    {
+        if (activeRoll == 0 || activeCategory == null)
+        {
+            rollResult.setText(
+                    "<html><center>" +
+                            "<b>No active task to complete.</b>" +
+                            "</center></html>"
+            );
+            return;
+        }
+
+        progress.completeTask(activeCategory);
+        int rxpAwarded = progress.awardRxpForCompletedTask(activeRoll);
+
+        rollResult.setText(
+                "<html><center>" +
+                        "<b>Task Complete!</b><br>" +
+                        "Earned <b>" + rxpAwarded + " RXP</b><br>" +
+                        "Roll Level: <b>" + progress.getRollLevel() + "</b><br>" +
+                        "Current Streak: <b>" + progress.getCurrentStreak() + "</b>" +
+                        "</center></html>"
+        );
+
+        activeRoll = 0;
+        activeCategory = null;
     }
 }

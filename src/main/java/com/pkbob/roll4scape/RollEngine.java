@@ -559,6 +559,11 @@ public class RollEngine
             return false;
         }
 
+        if (task.requiresSlayerTask())
+        {
+            return false;
+        }
+
         int attack = client.getRealSkillLevel(Skill.ATTACK);
         int strength = client.getRealSkillLevel(Skill.STRENGTH);
         int defence = client.getRealSkillLevel(Skill.DEFENCE);
