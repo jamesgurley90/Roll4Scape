@@ -16,6 +16,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.api.events.GameTick;
 
 @PluginDescriptor(
 		name = "Roll4Scape"
@@ -35,6 +36,7 @@ public class Roll4ScapePlugin extends Plugin
 
 	private NavigationButton navButton;
 	private Roll4ScapePanel panel;
+	private boolean progressLoaded = false;
 
 	@Override
 	protected void startUp()
@@ -76,9 +78,21 @@ public class Roll4ScapePlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		if (event.getGameState() == GameState.LOGGED_IN)
+		if (event.getGameState() != GameState.LOGGED_IN)
+		{
+			progressLoaded = false;
+		}
+	}
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		if (!progressLoaded &&
+				client.getGameState() == GameState.LOGGED_IN &&
+				client.getLocalPlayer() != null &&
+				client.getLocalPlayer().getName() != null)
 		{
 			loadProgress();
+			progressLoaded = true;
 		}
 	}
 
@@ -316,7 +330,12 @@ public class Roll4ScapePlugin extends Plugin
 				wildTasksCompleted,
 				equippedTitle
 		);
+		if (panel != null)
+		{
+			panel.refreshProgressDisplay();
+		}
 	}
+
 
 	private int getSavedInt(
 			String key,

@@ -42,7 +42,8 @@ public class Roll4ScapePanel extends PluginPanel
                     "Choose a category to roll!",
                     SwingConstants.CENTER
             );
-
+    private final JLabel progressDisplay =
+            new JLabel("", SwingConstants.CENTER);
     public Roll4ScapePanel(
             Client client,
             Roll4ScapeProgress progress,
@@ -141,10 +142,26 @@ public class Roll4ScapePanel extends PluginPanel
         categoryPanel.add(combatButton);
         categoryPanel.add(adventureButton);
         categoryPanel.add(wildButton);
+        categoryPanel.add(wildButton);
         categoryPanel.add(completeButton);
 
-        add(categoryPanel, BorderLayout.CENTER);
+        JPanel centerPanel =
+                new JPanel(new BorderLayout(0, 10));
+
+        centerPanel.add(
+                categoryPanel,
+                BorderLayout.NORTH
+        );
+
+        centerPanel.add(
+                progressDisplay,
+                BorderLayout.CENTER
+        );
+
+        add(centerPanel, BorderLayout.CENTER);
         add(rollResult, BorderLayout.SOUTH);
+
+        refreshProgressDisplay();
     }
 
     private boolean canRoll()
@@ -197,6 +214,7 @@ public class Roll4ScapePanel extends PluginPanel
 
         if (task == null)
         {
+
             clearActiveTask();
             showNoTask();
             return;
@@ -463,6 +481,7 @@ public class Roll4ScapePanel extends PluginPanel
          * Progress has changed, so save it immediately.
          */
         saveProgress.run();
+        refreshProgressDisplay();
 
         clearActiveTask();
 
@@ -594,6 +613,55 @@ public class Roll4ScapePanel extends PluginPanel
                         "</center></html>"
         );
     }
+    public void refreshProgressDisplay()
+    {
+        int rxpNeeded =
+                progress.getRxpNeededForNextLevel();
+
+        String rxpText;
+
+        if (progress.getRollLevel() >=
+                Roll4ScapeProgress.MAX_ROLL_LEVEL)
+        {
+            rxpText = "MAX";
+        }
+        else
+        {
+            rxpText =
+                    progress.getRxp() +
+                            " / " +
+                            rxpNeeded;
+        }
+
+        progressDisplay.setText(
+                "<html><center>" +
+                        "<hr>" +
+                        "<b>ROLL4SCAPE PROGRESS</b><br><br>" +
+                        "Roll Level: <b>" +
+                        progress.getRollLevel() +
+                        "</b><br>" +
+                        "RXP: <b>" +
+                        rxpText +
+                        "</b><br>" +
+                        "Current Streak: <b>" +
+                        progress.getCurrentStreak() +
+                        "</b><br>" +
+                        "Best Streak: <b>" +
+                        progress.getBestStreak() +
+                        "</b><br>" +
+                        "Tasks Completed: <b>" +
+                        progress.getTotalTasksCompleted() +
+                        "</b><br>" +
+                        "Rerolls: <b>" +
+                        progress.getRerolls() +
+                        " / " +
+                        Roll4ScapeProgress.MAX_REROLLS +
+                        "</b>" +
+                        "<hr>" +
+                        "</center></html>"
+        );
+    }
+
 
     private void clearActiveTask()
     {
