@@ -3,7 +3,8 @@ package com.pkbob.roll4scape;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.util.List;
-
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -21,6 +22,9 @@ public class Roll4ScapePanel extends PluginPanel
     private final Client client;
     private final Roll4ScapeProgress progress;
     private final Runnable saveProgress;
+    private final Consumer<ActiveTask> showTaskOverlay;
+    private final Runnable clearTaskOverlay;
+    private final BiConsumer<Integer, Integer> showCompletionOverlay;
     private final RollEngine rollEngine = new RollEngine();
 
     private int activeRoll = 0;
@@ -47,11 +51,17 @@ public class Roll4ScapePanel extends PluginPanel
     public Roll4ScapePanel(
             Client client,
             Roll4ScapeProgress progress,
-            Runnable saveProgress)
+            Runnable saveProgress,
+            Consumer<ActiveTask> showTaskOverlay,
+            Runnable clearTaskOverlay,
+            BiConsumer<Integer, Integer> showCompletionOverlay)
     {
         this.client = client;
         this.progress = progress;
         this.saveProgress = saveProgress;
+        this.showTaskOverlay = showTaskOverlay;
+        this.clearTaskOverlay = clearTaskOverlay;
+        this.showCompletionOverlay = showCompletionOverlay;
 
         setLayout(new BorderLayout());
 
@@ -141,7 +151,6 @@ public class Roll4ScapePanel extends PluginPanel
         categoryPanel.add(makingButton);
         categoryPanel.add(combatButton);
         categoryPanel.add(adventureButton);
-        categoryPanel.add(wildButton);
         categoryPanel.add(wildButton);
         categoryPanel.add(completeButton);
 
@@ -273,7 +282,7 @@ public class Roll4ScapePanel extends PluginPanel
                 task.getName(),
                 task.getMinQuantity()
         );
-
+        showTaskOverlay.accept(activeTask);
         String requirementText = "";
 
         if (!task.getRequirementNote().isEmpty())
@@ -482,6 +491,10 @@ public class Roll4ScapePanel extends PluginPanel
          */
         saveProgress.run();
         refreshProgressDisplay();
+        showCompletionOverlay.accept(
+                rxpAwarded,
+                progress.getCurrentStreak()
+        );
 
         clearActiveTask();
 
@@ -572,10 +585,7 @@ public class Roll4ScapePanel extends PluginPanel
 
         if (activeTask.isComplete())
         {
-            showCombatProgress(
-                    "<b>Combat task requirement complete!</b><br>" +
-                            "Press <b>Complete Task</b> to claim it.<br>"
-            );
+            completeActiveTask();
         }
         else
         {
@@ -669,5 +679,7 @@ public class Roll4ScapePanel extends PluginPanel
         activeCategory = null;
         activeTask = null;
         trackedCombatNpc = null;
+
+        clearTaskOverlay.run();
     }
 }

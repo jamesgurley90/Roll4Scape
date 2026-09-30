@@ -18,6 +18,7 @@ public class ActiveTask
         this.requiredAmount = requiredAmount;
         this.currentProgress = 0;
     }
+
     public String getCategory()
     {
         return category;
@@ -50,4 +51,9 @@ public class ActiveTask
             currentProgress++;
         }
     }
+
+    public String getProgressText()
+    {
+        return currentProgress + " / " + requiredAmount;
     }
+}

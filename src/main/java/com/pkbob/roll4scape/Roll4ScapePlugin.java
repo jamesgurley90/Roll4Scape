@@ -1,6 +1,7 @@
 package com.pkbob.roll4scape;
 
 import com.google.inject.Provides;
+
 import javax.inject.Inject;
 
 import net.runelite.api.Client;
@@ -8,6 +9,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.NPC;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.InteractingChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -15,8 +17,8 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
-import net.runelite.api.events.GameTick;
 
 @PluginDescriptor(
 		name = "Roll4Scape"
@@ -32,10 +34,17 @@ public class Roll4ScapePlugin extends Plugin
 	@Inject
 	private ConfigManager configManager;
 
+	@Inject
+	private OverlayManager overlayManager;
+
 	private Roll4ScapeProgress progress;
 
 	private NavigationButton navButton;
 	private Roll4ScapePanel panel;
+
+	private Roll4ScapeTaskOverlay taskOverlay;
+	private Roll4ScapeCompletionOverlay completionOverlay;
+
 	private boolean progressLoaded = false;
 
 	@Override
@@ -43,10 +52,17 @@ public class Roll4ScapePlugin extends Plugin
 	{
 		progress = new Roll4ScapeProgress();
 
+		taskOverlay = new Roll4ScapeTaskOverlay();
+		completionOverlay =
+				new Roll4ScapeCompletionOverlay(client);
+
 		panel = new Roll4ScapePanel(
 				client,
 				progress,
-				this::saveProgress
+				this::saveProgress,
+				this::showTaskOverlay,
+				this::clearTaskOverlay,
+				this::showCompletionOverlay
 		);
 
 		navButton = NavigationButton.builder()
@@ -58,21 +74,36 @@ public class Roll4ScapePlugin extends Plugin
 				.panel(panel)
 				.build();
 
+		overlayManager.add(taskOverlay);
+		overlayManager.add(completionOverlay);
+
 		clientToolbar.addNavigation(navButton);
 	}
 
 	@Override
 	protected void shutDown()
 	{
-		/*
-		 * Save one final time before the plugin shuts down.
-		 */
 		saveProgress();
 
-		clientToolbar.removeNavigation(navButton);
+		if (taskOverlay != null)
+		{
+			overlayManager.remove(taskOverlay);
+		}
+
+		if (completionOverlay != null)
+		{
+			overlayManager.remove(completionOverlay);
+		}
+
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+		}
 
 		navButton = null;
 		panel = null;
+		taskOverlay = null;
+		completionOverlay = null;
 	}
 
 	@Subscribe
@@ -83,6 +114,7 @@ public class Roll4ScapePlugin extends Plugin
 			progressLoaded = false;
 		}
 	}
+
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
@@ -123,6 +155,35 @@ public class Roll4ScapePlugin extends Plugin
 		}
 
 		panel.handleActorDeath(event.getActor());
+	}
+
+	public void showTaskOverlay(ActiveTask activeTask)
+	{
+		if (taskOverlay != null)
+		{
+			taskOverlay.setActiveTask(activeTask);
+		}
+	}
+
+	public void clearTaskOverlay()
+	{
+		if (taskOverlay != null)
+		{
+			taskOverlay.clearActiveTask();
+		}
+	}
+
+	public void showCompletionOverlay(
+			int rxpAwarded,
+			int currentStreak)
+	{
+		if (completionOverlay != null)
+		{
+			completionOverlay.showCompletion(
+					rxpAwarded,
+					currentStreak
+			);
+		}
 	}
 
 	private String getPlayerSavePrefix()
@@ -330,12 +391,12 @@ public class Roll4ScapePlugin extends Plugin
 				wildTasksCompleted,
 				equippedTitle
 		);
+
 		if (panel != null)
 		{
 			panel.refreshProgressDisplay();
 		}
 	}
-
 
 	private int getSavedInt(
 			String key,
