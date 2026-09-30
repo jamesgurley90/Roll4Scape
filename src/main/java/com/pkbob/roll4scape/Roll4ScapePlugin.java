@@ -11,6 +11,8 @@ import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.InteractingChanged;
+import net.runelite.api.events.StatChanged;
+import net.runelite.api.Skill;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -156,7 +158,19 @@ public class Roll4ScapePlugin extends Plugin
 
 		panel.handleActorDeath(event.getActor());
 	}
+	@Subscribe
+	public void onStatChanged(StatChanged event)
+	{
+		if (panel == null)
+		{
+			return;
+		}
 
+		panel.handleStatChanged(
+				event.getSkill(),
+				event.getXp()
+		);
+	}
 	public void showTaskOverlay(ActiveTask activeTask)
 	{
 		if (taskOverlay != null)

@@ -9,7 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-
+import net.runelite.api.Skill;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -26,7 +26,7 @@ public class Roll4ScapePanel extends PluginPanel
     private final Runnable clearTaskOverlay;
     private final BiConsumer<Integer, Integer> showCompletionOverlay;
     private final RollEngine rollEngine = new RollEngine();
-
+    private int lastCookingXp = -1;
     private int activeRoll = 0;
     private String activeCategory = null;
     private ActiveTask activeTask = null;
@@ -348,12 +348,25 @@ public class Roll4ScapePanel extends PluginPanel
         activeTask = null;
         trackedCombatNpc = null;
 
+        clearTaskOverlay.run();
+
         int quantity =
                 task.getMinQuantity();
 
         if (roll == 1)
         {
             quantity = 1;
+        }
+
+        if ("MAKING".equals(category))
+        {
+            activeTask = new ActiveTask(
+                    "MAKING",
+                    task.getName(),
+                    quantity
+            );
+
+            showTaskOverlay.accept(activeTask);
         }
 
         rollResult.setText(
@@ -546,6 +559,43 @@ public class Roll4ScapePanel extends PluginPanel
      * Count the death only when it is the exact NPC object
      * that the local player previously engaged.
      */
+    public void handleStatChanged(
+            Skill skill,
+            int xp)
+    {
+        if (skill != Skill.COOKING)
+        {
+            return;
+        }
+
+        if (lastCookingXp == -1)
+        {
+            lastCookingXp = xp;
+            return;
+        }
+
+        int xpGained = xp - lastCookingXp;
+        lastCookingXp = xp;
+
+        if (activeTask == null ||
+                !"MAKING".equals(activeTask.getCategory()) ||
+                !"Shrimp".equals(activeTask.getTargetName()))
+        {
+            return;
+        }
+
+        if (xpGained != 30)
+        {
+            return;
+        }
+
+        activeTask.addProgress();
+
+        if (activeTask.isComplete())
+        {
+            completeActiveTask();
+        }
+    }
     public void handleActorDeath(
             Actor actor)
     {
