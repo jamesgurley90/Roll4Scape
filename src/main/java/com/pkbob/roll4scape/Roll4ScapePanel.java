@@ -26,7 +26,8 @@ public class Roll4ScapePanel extends PluginPanel
     private final Runnable clearTaskOverlay;
     private final BiConsumer<Integer, Integer> showCompletionOverlay;
     private final RollEngine rollEngine = new RollEngine();
-    private int lastCookingXp = -1;
+    private int lastMakingXp = -1;
+    private Skill lastMakingSkill = null;
     private int activeRoll = 0;
     private String activeCategory = null;
     private ActiveTask activeTask = null;
@@ -563,28 +564,45 @@ public class Roll4ScapePanel extends PluginPanel
             Skill skill,
             int xp)
     {
-        if (skill != Skill.COOKING)
+        if (skill != Skill.COOKING &&
+                skill != Skill.SMITHING)
         {
             return;
         }
 
-        if (lastCookingXp == -1)
+        if (lastMakingSkill != skill)
         {
-            lastCookingXp = xp;
+            lastMakingSkill = skill;
+            lastMakingXp = xp;
             return;
         }
 
-        int xpGained = xp - lastCookingXp;
-        lastCookingXp = xp;
+        int xpGained = xp - lastMakingXp;
+        lastMakingXp = xp;
 
         if (activeTask == null ||
-                !"MAKING".equals(activeTask.getCategory()) ||
-                !"Shrimp".equals(activeTask.getTargetName()))
+                !"MAKING".equals(activeTask.getCategory()))
         {
             return;
         }
 
-        if (xpGained != 30)
+        boolean validAction = false;
+
+        if ("Shrimp".equals(activeTask.getTargetName()) &&
+                skill == Skill.COOKING &&
+                xpGained == 30)
+        {
+            validAction = true;
+        }
+
+        if ("Iron bars".equals(activeTask.getTargetName()) &&
+                skill == Skill.SMITHING &&
+                (xpGained == 12 || xpGained == 13))
+        {
+            validAction = true;
+        }
+
+        if (!validAction)
         {
             return;
         }
