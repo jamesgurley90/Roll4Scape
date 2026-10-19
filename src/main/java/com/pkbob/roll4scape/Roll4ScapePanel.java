@@ -462,13 +462,14 @@ public class Roll4ScapePanel extends PluginPanel
             return;
         }
 
-        if ("COMBAT".equals(activeCategory))
+        if ("COMBAT".equals(activeCategory) ||
+                "MAKING".equals(activeCategory))
         {
             if (activeTask == null)
             {
                 rollResult.setText(
                         "<html><center>" +
-                                "<b>No active Combat task found.</b>" +
+                                "<b>No active tracked task found.</b>" +
                                 "</center></html>"
                 );
 
@@ -477,9 +478,26 @@ public class Roll4ScapePanel extends PluginPanel
 
             if (!activeTask.isComplete())
             {
-                showCombatProgress(
-                        "<b>Task not complete yet.</b><br>"
-                );
+                if ("COMBAT".equals(activeCategory))
+                {
+                    showCombatProgress(
+                            "<b>Task not complete yet.</b><br>"
+                    );
+                }
+                else
+                {
+                    rollResult.setText(
+                            "<html><center>" +
+                                    "<b>Task not complete yet.</b><br>" +
+                                    activeTask.getTargetName() +
+                                    "<br>Progress: <b>" +
+                                    activeTask.getCurrentProgress() +
+                                    " / " +
+                                    activeTask.getRequiredAmount() +
+                                    "</b>" +
+                                    "</center></html>"
+                    );
+                }
 
                 return;
             }

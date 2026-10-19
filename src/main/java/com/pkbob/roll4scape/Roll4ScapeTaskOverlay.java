@@ -14,7 +14,8 @@ public class Roll4ScapeTaskOverlay extends OverlayPanel
 
     public Roll4ScapeTaskOverlay()
     {
-        setPosition(OverlayPosition.TOP_LEFT);
+        setPosition(OverlayPosition.DYNAMIC);
+        setMovable(true);
     }
 
     public void setActiveTask(ActiveTask activeTask)
